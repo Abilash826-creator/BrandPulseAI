@@ -1,0 +1,99 @@
+<USER_REQUEST>
+You are working on "AdvancedBrandpulseAI": a FastAPI + Motor (MongoDB) backend in /backend and a React 18 + Vite + Tailwind frontend in /frontend. I did a code review and found the issues below. Fix them in the phases listed. After each phase:
+- run the tests,
+- summarize what changed in a few lines,
+- stop and wait for me to say "continue" before starting the next phase.
+Do not make changes outside the scope of a phase. Do not break existing API response shapes the frontend uses, except where I say so. Before editing, read the files named in each item.
+
+========================================
+PHASE 0: Test setup (do this first)
+========================================
+- Add pytest, pytest-asyncio, httpx, and mongomock-motor (or a test Mongo fixture) to a new backend/requirements-dev.txt.
+- Create backend/tests/ with a conftest.py that provides: an app client (httpx.AsyncClient with ASGITransport), an in-memory DB override for get_db(), and helpers to create users with a given role and return their JWT.
+- Add a GitHub Actions workflow (.github/workflows/ci.yml) that runs backend tests and `npm ci && npm run build` in /frontend.
+- Pin every dependency in backend/requirements.txt to an exact version that is currently installed and working (generate it with pip freeze for the packages we use). Remove the unused ones (passlib and fpdf2 if I am not using them. Check first).
+
+========================================
+PHASE 1: Authentication and authorization (highest priority)
+========================================
+Files: backend/app/core/security.py, core/config.py, api/v1/endpoints/auth.py, schemas/all_schemas.py
+
+1. /auth/firebase-login must verify the Firebase ID token for real (firebase-admin SDK with FIREBASE_PROJECT_ID, or verify against Google's public certs and check aud, iss, exp). Reject the request if the token is missing or invalid. Never trust the `email`, `uid` or `role` the client sends in the body. Take them only from the verified token claims.
+2. Roles must be set by the server. Remove `role` from the register, firebase-login and demo-login inputs (UserCreate and FirebaseUserAuth). New users get "brand_manager". `demo-login` must only work when DEMO_MODE=true in the environment, must not accept an arbitrary `persona` role (allow-list: brand_manager and analyst only), and must not use a known password for the demo user.
+3. SECRET_KEY must be read from the environment with NO default. If it is missing or shorter than 32 characters, raise at startup.
+4. Password hashing: replace the PBKDF2 with a static shared salt by bcrypt or argon2 with a per-user salt. Delete the `plain_password == hashed_password` fallback in verify_password. Add a migration path: on login, if the stored hash is in the old format, verify with the old method once, then re-hash with the new method and save it.
+5. get_current_user must raise 401 if the user does not exist or is not is_active. Remove the fake "Demo Executive" fallback.
+6. Add a `require_role("admin")` dependency. Restrict /auth/audit-logs and POST /ml/train to admins.
+7. Normalize emails (strip and lowercase) in register, login and firebase-login so duplicates cannot be created.
+8. Reduce the access token lifetime to 30 minutes and add a refresh-token flow: the refresh token goes in an httpOnly, Secure, SameSite cookie, with a /auth/refresh and a /auth/logout endpoint. Update frontend AuthContext.jsx and services/api.js so they no longer store the JWT in localStorage (keep the access token in memory and refresh on 401).
+
+Write tests for: forged or unsigned Firebase token is rejected; client-supplied role is ignored; unknown-user token returns 401; admin-only endpoints return 403 for non-admins; old-hash login upgrades to the new hash; demo login is disabled when DEMO_MODE is false.
+
+========================================
+PHASE 2: Tenant isolation and open endpoints
+========================================
+Files: api/v1/endpoints/brands.py, monitoring.py, crisis.py, analytics.py, competitors.py, reports.py, social_media.py, system.py, dataset_ingestion.py, ml_studio.py
+
+1. Create a dependency `get_brand_for_user(brand_id, current_user)` that loads the brand and returns 404 if it does not exist or does not belong to the user (owner_id), except for admins. Use it in EVERY route that takes a brand_id, including mentions, alerts, summaries, analytics, competitors, reports, Instagram and dataset ingest.
+2. GET /brands must only return the current user's brands. PUT and DELETE /brands/{id} must check ownership. Alert acknowledge and resolve, and summary get, update and delete, must check that the object's brand belongs to the user.
+3. When brand_id is omitted in mention, alert or analytics routes, scope the query to the user's own brand IDs. Never query across all brands.
+4. Require authentication on: /system/db-status, /system/db-connect (admin only; better still, remove db-connect entirely and use environment variables only), /auth/firewall-status, /auth/firewall-logs (admin only), /auth/firewall-test (admin only), /reports/download/{filename} (also verify the report belongs to the user), /monitoring/stream and /monitoring/test-nlp.
+5. /auth/audit-logs: admins see all logs, other users see only their own.
+6. In mention search, wrap user input in re.escape() and cap its length at 100 characters.
+7. Replace the CORS allow_origin_regex with an explicit list from the CORS_ORIGINS env var. Remove the *.vercel.app and *.onrender.com wildcards.
+8. Mount the API router only once, under /api/v1. Remove the duplicate mounts at /api and "" and the alias prefixes (/listening, /conversations, /ai-insights, /ai_insights, /ai, /media). First search the frontend for any URL that uses them and update those calls. Delete backend/app/api/social_media.py (a pure re-export).
+
+Write tests proving that user A cannot read, update or delete user B's brands, mentions, alerts, summaries or reports.
+
+========================================
+PHASE 3: Data integrity and correctness
+========================================
+1. Add an `is_simulated: bool` field to every mention, alert and summary created by scraper_simulator, the stream, seeding or crisis simulation. Add a DEMO_MODE env flag. When it is false, do not auto-seed history on brand creation, and make /monitoring/stream stop inserting fake data (a GET should never write to the DB). Let the dashboard and reports filter simulated vs real data, and show a visible "Demo data" badge in the frontend when simulated data is shown.
+2. Remove the hardcoded sentiment values in brands.py (create_brand returns 0.42 and update_brand returns 0.35). Compute them from real data.
+3. Fix N+1 queries in list_brands with one aggregation pipeline (count and average sentiment per brand).
+4. Remove random noise from forecast_trends in ai_engine.py. If there is not enough data, return an explicit "insufficient_data" response instead of random numbers. Remove the hardcoded fallback topics and keywords for the same reason.
+5. Store all timestamps as timezone-aware UTC datetime objects (not local-time ISO strings) and migrate the code that reads them. Serialize to ISO 8601 with "Z" in the API responses.
+6. Replace "TechNova" and other hardcoded default brand names with values from the user's own data.
+7. Add indexes: alerts (brand_id, status, created_at), summaries (brand_id, created_at), auth_logs (user_id, login_timestamp), firewall_logs (timestamp). Add TTL indexes (90 days) on auth_logs and firewall_logs.
+
+========================================
+PHASE 4: Machine learning quality
+========================================
+Files: backend/app/services/ai_engine.py, scripts/train_*.py, ml/*, models/*
+
+1. Replace the broad `except Exception: pass` blocks in ai_engine.py with specific exceptions plus logger.warning/exception. Expose model status (loaded or fallback, per model) in /health and in /ml/metrics.
+2. Training: use stratified train/validation/test splits, 5-fold cross-validation, and class_weight="balanced". Report per-class precision, recall and F1, and macro-F1. Tune the decision threshold for the "negative" class, where recall is only about 0.63 now, because crisis detection depends on it.
+3. The Annapoorna model reports 100% accuracy on 72 samples from a generated, templated dataset. Check generate_annapoorna_dataset.py and the train/test split for template duplication or leakage (deduplicate near-identical texts before splitting). Report honest metrics. In the UI and metrics JSON, label this model as "trained on synthetic data" unless real labeled data is added.
+4. Fix the metrics JSON naming: apple_model_metrics.json says "Transformer/Ensemble"; it should describe the actual model (TF-IDF + linear classifier). Add model_version, trained_at, sklearn_version and the data hash.
+5. Make POST /ml/train (admin only) a background job: start it with BackgroundTasks or a worker, return a job ID, and add GET /ml/train/{job_id} for status. Save models to versioned filenames and swap the active model atomically. Do not run CPU-heavy work in the async event loop (use run_in_threadpool for inference and report generation).
+6. Add multilingual handling: detect the language of each mention. Add a clear fallback and a "language" field. If a mention is not English, do not apply VADER blindly. Mark it as low confidence, and add an optional hook for a multilingual model (XLM-R or IndicBERT) behind a config flag.
+
+========================================
+PHASE 5: Architecture cleanup
+========================================
+1. Merge app/config/settings.py into app/core/config.py (one settings system, using pydantic-settings BaseSettings). Remove the duplicate app/main.py proxy if nothing needs it, and update the README run commands.
+2. Replace print() with the logging module (structured, with request IDs via middleware).
+3. Move generated reports out of the local disk: add a storage abstraction with a local implementation and an S3-compatible implementation selected by env var.
+4. Move the ~11 MB of datasets and .joblib models to Git LFS (or document a download script) and update .gitignore.
+5. Replace the regex "WAF" in core/firewall.py: keep the login brute-force limiter but use slowapi (Redis-backed if REDIS_URL is set, in-memory otherwise), only trust X-Forwarded-For from configured proxies, and stop blocking characters like # and -- in passwords. Rely on Pydantic validation and parameterized queries.
+6. Frontend: split files over ~500 lines (DatasetUpload.jsx, BrandSettings.jsx, SocialListening.jsx, ModelTrainingStudio.jsx, Dashboard.jsx) into smaller components and hooks, and introduce @tanstack/react-query for data fetching with loading and error states.
+
+========================================
+PHASE 6: Deployment
+========================================
+- Add backend/Dockerfile, frontend/Dockerfile (multi-stage, served by nginx), and a docker-compose.yml with api, mongo and frontend services, plus a healthcheck.
+- Update README.md and both .env.example files with every new variable (SECRET_KEY, DEMO_MODE, CORS_ORIGINS, REDIS_URL, storage settings) and clear setup, test and run instructions.
+- Add a CHANGELOG.md listing all breaking changes (removed alias routes, removed role input, token handling change).
+
+Rules for all phases:
+- Keep changes minimal and focused. No unrelated refactors.
+- Add or update tests for every behavior change. All tests must pass before you stop a phase.
+- If something in this prompt conflicts with what you see in the code, tell me, and do not guess.
+Start with Phase 0 and Phase 1 now.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-14T13:29:25+05:30.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (Medium). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

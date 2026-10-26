@@ -1,0 +1,74 @@
+{
+  "model_name": "TF-IDF + Calibrated LinearSVC (Annapoorna Hospitality)",
+  "model_version": "1.2.0-v20261018_032213",
+  "dataset_name": "Sree Annapoorna Coimbatore Instagram & Review Synthetic Dataset",
+  "dataset_label": "Trained on synthetic data",
+  "is_synthetic": true,
+  "data_type": "synthetic",
+  "training_data_notes": "Trained on synthetic templated dataset for demonstration; deduplicated to eliminate data leakage.",
+  "trained_at": "2026-10-18T03:22:13.764523+00:00",
+  "sklearn_version": "1.4.0",
+  "total_training_samples": 14,
+  "total_testing_samples": 5,
+  "sentiment_accuracy": 0.6,
+  "sentiment_macro_f1": 0.25,
+  "sentiment_weighted_f1": 0.45,
+  "emotion_accuracy": 0.6,
+  "intent_accuracy": 0.6,
+  "confusion_matrix": [
+    [
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      3
+    ]
+  ],
+  "classification_report": {
+    "negative": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "neutral": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "positive": {
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1-score": 0.75,
+      "support": 3.0
+    },
+    "accuracy": 0.6,
+    "macro avg": {
+      "precision": 0.19999999999999998,
+      "recall": 0.3333333333333333,
+      "f1-score": 0.25,
+      "support": 5.0
+    },
+    "weighted avg": {
+      "precision": 0.36,
+      "recall": 0.6,
+      "f1-score": 0.45,
+      "support": 5.0
+    }
+  },
+  "classes": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "vocabulary_size": 590
+}

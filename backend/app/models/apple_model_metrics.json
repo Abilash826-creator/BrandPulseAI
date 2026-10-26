@@ -1,0 +1,343 @@
+{
+  "model_name": "TF-IDF + Calibrated LinearSVC (Linear Classifier)",
+  "model_version": "2.5.0-v20261023_015950",
+  "trained_at": "2026-10-23T01:59:52.269721+00:00",
+  "sklearn_version": "1.4.0",
+  "data_hash": "f0796e20a6e347b0e1e3ef02dde766ac7470ed0db209beb776be8d3aad8a66a9",
+  "dataset_source": "Kaggle Apple Twitter & Amazon Reviews Corpus",
+  "total_dataset_size": 9022,
+  "train_samples": 6314,
+  "val_samples": 1354,
+  "test_samples": 1354,
+  "classes": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "accuracy": 0.8191,
+  "precision": 0.8532,
+  "recall": 0.8191,
+  "macro_f1": 0.7378,
+  "weighted_f1": 0.8233,
+  "decision_threshold_negative": 0.2,
+  "negative_recall_baseline": 0.635,
+  "negative_recall_tuned": 0.845,
+  "cross_validation_5fold": {
+    "mean_accuracy": 0.8685,
+    "std_accuracy": 0.0051,
+    "mean_macro_f1": 0.8024,
+    "std_macro_f1": 0.0091
+  },
+  "emotion_accuracy": 0.8377,
+  "intent_accuracy": 0.8526,
+  "confusion_matrix": [
+    [
+      169,
+      24,
+      7
+    ],
+    [
+      141,
+      183,
+      17
+    ],
+    [
+      30,
+      26,
+      757
+    ]
+  ],
+  "classification_report": {
+    "negative": {
+      "precision": 0.4970588235294118,
+      "recall": 0.845,
+      "f1-score": 0.6259259259259259,
+      "support": 200.0
+    },
+    "neutral": {
+      "precision": 0.7854077253218884,
+      "recall": 0.5366568914956011,
+      "f1-score": 0.6376306620209059,
+      "support": 341.0
+    },
+    "positive": {
+      "precision": 0.969270166453265,
+      "recall": 0.931119311193112,
+      "f1-score": 0.9498117942283564,
+      "support": 813.0
+    },
+    "accuracy": 0.8190546528803545,
+    "macro avg": {
+      "precision": 0.7505789051015217,
+      "recall": 0.7709254008962377,
+      "f1-score": 0.7377894607250628,
+      "support": 1354.0
+    },
+    "weighted avg": {
+      "precision": 0.8532145083952368,
+      "recall": 0.8190546528803545,
+      "f1-score": 0.8233487663530042,
+      "support": 1354.0
+    }
+  },
+  "top_keywords_per_class": {
+    "negative": [
+      {
+        "term": "apple",
+        "weight": 3.405
+      },
+      {
+        "term": "fuck",
+        "weight": 3.157
+      },
+      {
+        "term": "shit",
+        "weight": 2.735
+      },
+      {
+        "term": "fix",
+        "weight": 2.411
+      },
+      {
+        "term": "hate",
+        "weight": 2.077
+      },
+      {
+        "term": "stop",
+        "weight": 2.028
+      },
+      {
+        "term": "fucking",
+        "weight": 2.021
+      },
+      {
+        "term": "charger",
+        "weight": 1.949
+      },
+      {
+        "term": "fail",
+        "weight": 1.691
+      },
+      {
+        "term": "ur",
+        "weight": 1.633
+      },
+      {
+        "term": "yosemite",
+        "weight": 1.568
+      },
+      {
+        "term": "apple aapl",
+        "weight": 1.556
+      },
+      {
+        "term": "suck",
+        "weight": 1.483
+      },
+      {
+        "term": "hell",
+        "weight": 1.405
+      },
+      {
+        "term": "chargers",
+        "weight": 1.396
+      }
+    ],
+    "neutral": [
+      {
+        "term": "aapl",
+        "weight": 4.936
+      },
+      {
+        "term": "apple",
+        "weight": 3.601
+      },
+      {
+        "term": "december",
+        "weight": 1.391
+      },
+      {
+        "term": "rt",
+        "weight": 1.209
+      },
+      {
+        "term": "2015",
+        "weight": 1.202
+      },
+      {
+        "term": "blog",
+        "weight": 1.12
+      },
+      {
+        "term": "twitter",
+        "weight": 1.118
+      },
+      {
+        "term": "2014",
+        "weight": 1.092
+      },
+      {
+        "term": "companies",
+        "weight": 1.082
+      },
+      {
+        "term": "check",
+        "weight": 1.077
+      },
+      {
+        "term": "stocks",
+        "weight": 1.021
+      },
+      {
+        "term": "blog aapl",
+        "weight": 1.011
+      },
+      {
+        "term": "apple google",
+        "weight": 0.992
+      },
+      {
+        "term": "apple like",
+        "weight": 0.969
+      },
+      {
+        "term": "garage",
+        "weight": 0.949
+      }
+    ],
+    "positive": [
+      {
+        "term": "great",
+        "weight": 5.582
+      },
+      {
+        "term": "love",
+        "weight": 4.7
+      },
+      {
+        "term": "phone",
+        "weight": 3.766
+      },
+      {
+        "term": "camera",
+        "weight": 3.606
+      },
+      {
+        "term": "best",
+        "weight": 2.961
+      },
+      {
+        "term": "amazing",
+        "weight": 2.772
+      },
+      {
+        "term": "awesome",
+        "weight": 2.525
+      },
+      {
+        "term": "good",
+        "weight": 2.214
+      },
+      {
+        "term": "iphone",
+        "weight": 2.055
+      },
+      {
+        "term": "great phone",
+        "weight": 2.047
+      },
+      {
+        "term": "easy",
+        "weight": 2.042
+      },
+      {
+        "term": "upgrade",
+        "weight": 1.935
+      },
+      {
+        "term": "features",
+        "weight": 1.924
+      },
+      {
+        "term": "11",
+        "weight": 1.893
+      },
+      {
+        "term": "excellent",
+        "weight": 1.881
+      }
+    ]
+  },
+  "thematic_clusters": [
+    {
+      "cluster_id": 0,
+      "name": "Camera System & Macro Photography",
+      "top_terms": [
+        "phone",
+        "great",
+        "camera",
+        "iphone",
+        "love",
+        "great phone",
+        "best",
+        "new"
+      ]
+    },
+    {
+      "cluster_id": 1,
+      "name": "Battery Longevity & Power Management",
+      "top_terms": [
+        "aapl",
+        "apple",
+        "aapl aapl",
+        "apple aapl",
+        "intraday",
+        "aapl apple",
+        "technicals levels intraday",
+        "apple fibonacci"
+      ]
+    },
+    {
+      "cluster_id": 2,
+      "name": "iOS Software, Neural Engine & UI Speed",
+      "top_terms": [
+        "apple",
+        "rt",
+        "fuck",
+        "iphone",
+        "just",
+        "fix",
+        "apple apple",
+        "onerepublic apple"
+      ]
+    },
+    {
+      "cluster_id": 3,
+      "name": "Design, Titanium Build & Display Quality",
+      "top_terms": [
+        "protests apple",
+        "store nyc anger",
+        "diein protests",
+        "misplaced retweet agree",
+        "misplaced retweet",
+        "stage diein",
+        "stage diein protests",
+        "protesters stage"
+      ]
+    },
+    {
+      "cluster_id": 4,
+      "name": "Retail Pricing, Warranty & Trade-in Deals",
+      "top_terms": [
+        "ft outlet",
+        "000 ft",
+        "outlet",
+        "outlet computers",
+        "outlet computers apple",
+        "apple need batteries",
+        "computers apple",
+        "000 ft outlet"
+      ]
+    }
+  ]
+}

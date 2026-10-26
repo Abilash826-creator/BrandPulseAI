@@ -1,0 +1,199 @@
+import re
+from typing import List, Dict, Any, Optional, Tuple
+
+DEFAULT_BRAND_DICTIONARY: Dict[str, Dict[str, Any]] = {
+    "Sree Annapoorna": {
+        "brand_names": [
+            "Sree Annapoorna", "Annapoorna", "Annapoorna Restaurant", "Annapoorna Coimbatore",
+            "Sree Annapoorna Sree Gowrishankar", "Annapoorna Hotel", "Gowrishankar"
+        ],
+        "products": [
+            "Ghee Roast", "Ghee Roast Dosa", "Filter Coffee", "Sambar Vada", "Rava Dosa",
+            "Idli Sambar", "Poori Masala", "Meals", "South Indian Meals", "Podi Dosa",
+            "Mysurpa", "Annapoorna Sweets", "Kaju Katli", "Sambar", "Curd Rice", "Vada"
+        ],
+        "services": [
+            "Dine-in", "Takeaway", "Catering", "Annapoorna Delivery", "Sweet Stall",
+            "RS Puram Branch", "Gandhipuram Branch", "Avinashi Road Branch", "Peoples Park Branch"
+        ],
+        "aliases": ["annapoorna cbe", "sree annapoorna hotel", "annapoorna gowrishankar"],
+        "hashtags": [
+            "#annapoorna", "#sreeannapoorna", "#coimbatorefood", "#annapoornacoffee",
+            "#gheeroast", "#coimbatoreeats", "#southindianfood", "#annapoornasweets"
+        ],
+        "common_spellings": ["annapoorna", "sree annapoorna", "annapurna", "gowrishankar"],
+        "disambiguation_negatives": [
+            "annapoorna devi temple", "goddess annapoorna", "annapoorna stotram",
+            "temple pooja", "annapurna sanctuary", "annapurna circuit", "himalayan mountain"
+        ],
+        "business_type": "service"
+    },
+    "Apple": {
+        "brand_names": ["Apple", "Apple Inc", "Apple Corp", "AppleHQ"],
+        "products": [
+            "iPhone", "iPhone 16", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 16 Pro", "iPhone 16 Pro Max",
+            "iPad", "iPad Pro", "iPad Air", "iPad Mini",
+            "MacBook", "MacBook Pro", "MacBook Air", "Mac Mini", "iMac", "Mac Studio", "Mac Pro",
+            "Apple Watch", "Apple Watch Ultra", "Apple Watch Series",
+            "AirPods", "AirPods Pro", "AirPods Max",
+            "Vision Pro", "Apple Vision Pro", "HomePod"
+        ],
+        "services": [
+            "Apple Pay", "Apple Music", "Apple TV", "Apple TV+", "AppleCare", "Apple Care",
+            "iCloud", "App Store", "Apple Intelligence", "Apple Arcade", "Apple Fitness",
+            "Genius Bar", "Apple Card"
+        ],
+        "aliases": ["AAPL", "ios", "macos", "ipados", "watchos"],
+        "hashtags": ["#apple", "#iphone", "#ipad", "#macbook", "#applewatch", "#airpods", "#ios18", "#appleintelligence", "#appleevent"],
+        "common_spellings": ["iphone", "ipad", "macbook", "airpods", "applewatch", "apple tv"],
+        "disambiguation_negatives": [
+            "apple tree", "apple trees", "apple pie", "apple juice", "apple cider", "apple orchard",
+            "apple sauce", "apple butter", "apples", "an apple", "fresh apple", "green apple",
+            "honeycrisp", "gala apple", "granny smith", "ate an apple", "eat an apple", "eating apple",
+            "chopped apple", "baking apple", "caramel apple", "apple crumble", "cinnamon apple",
+            "apple blossom", "apple vinegar", "apple cider vinegar", "apple crisp", "apple turnover",
+            "apple slice", "apple salad"
+        ],
+        "business_type": "product"
+    },
+    "Samsung": {
+        "brand_names": ["Samsung", "Samsung Electronics"],
+        "products": [
+            "Galaxy", "Galaxy S24", "Galaxy S23", "Galaxy S22", "Galaxy S series", "Galaxy S24 Ultra",
+            "Galaxy Z Fold", "Galaxy Z Flip", "Galaxy Z Fold 6", "Galaxy Z Flip 6",
+            "Galaxy Buds", "Galaxy Buds Pro", "Galaxy Buds Live", "Galaxy Watch", "Galaxy Watch Ultra",
+            "Galaxy Tab", "Samsung Smart TV", "Samsung TV", "Bespoke Refrigerator"
+        ],
+        "services": ["Samsung Pay", "SmartThings", "Samsung Knox", "OneUI", "Samsung Health"],
+        "aliases": ["samsung mobile", "galaxy phone"],
+        "hashtags": ["#samsung", "#galaxy", "#galaxys24", "#galaxybuds", "#galaxyzfold"],
+        "common_spellings": ["samsung", "galaxy s24", "galaxy buds", "galaxy watch"],
+        "disambiguation_negatives": [
+            "andromeda galaxy", "milky way galaxy", "distant galaxies", "spiral galaxy",
+            "guardians of the galaxy", "galaxy of stars", "deep space galaxy", "telescope galaxy"
+        ],
+        "business_type": "product"
+    },
+    "Sony": {
+        "brand_names": ["Sony", "Sony Corp", "Sony Group"],
+        "products": [
+            "PlayStation", "PS5", "PS5 Pro", "PS4", "DualSense", "PlayStation VR",
+            "Bravia", "Bravia OLED", "WH-1000XM5", "WH-1000XM4", "WF-1000XM5",
+            "Alpha Camera", "A7IV", "A7SIII", "A7R V", "G-Master", "Walkman"
+        ],
+        "services": ["PlayStation Network", "PSN", "PlayStation Plus", "Sony Music", "Sony Pictures"],
+        "aliases": ["playstation", "sony alpha"],
+        "hashtags": ["#sony", "#playstation", "#ps5", "#bravia", "#sonyalpha"],
+        "common_spellings": ["playstation 5", "playstation", "sony bravia"],
+        "disambiguation_negatives": [
+            "sony and gloomy", "ps post-script", "ps post script"
+        ],
+        "business_type": "product"
+    },
+    "boAt": {
+        "brand_names": ["boAt", "boAt Lifestyle", "Imagine Marketing"],
+        "products": [
+            "Airdopes", "Airdopes 141", "Airdopes 131", "Airdopes 441",
+            "Rockerz", "Rockerz 255", "Rockerz 450", "Stone Speaker", "Stone 1200",
+            "Nirvana Ion", "boAt Smartwatch", "Wave Smartwatch", "Storm Smartwatch",
+            "boAt Earbuds", "boAt Headphones", "boAt Bassheads"
+        ],
+        "services": ["boAt Care", "boAt Club"],
+        "aliases": ["boat audio", "boat lifestyle"],
+        "hashtags": ["#boat", "#airdopes", "#rockerz", "#iamaboathead", "#boatlife"],
+        "common_spellings": ["boat airdopes", "boat rockerz", "boat earbuds", "boat smartwatch"],
+        "disambiguation_negatives": [
+            "row your boat", "fishing boat", "wooden boat", "cargo boat", "speed boat",
+            "same boat", "sailboat", "boat on water", "small boat", "boat across",
+            "docked the boat", "rowing boat", "house boat", "motor boat", "river boat",
+            "lake boat", "boat captain", "boat harbor"
+        ],
+        "business_type": "product"
+    },
+    "Nike": {
+        "brand_names": ["Nike", "Nike Inc"],
+        "products": [
+            "Air Jordan", "Air Jordan 1", "Jordan 4", "Pegasus", "Pegasus 41", "Air Max", "Air Max 90",
+            "Dunk", "Nike Dunk", "Vaporfly", "Alphafly", "Tech Fleece", "Dri-FIT", "Nike Running Shoes"
+        ],
+        "services": ["SNKRS App", "SNKRS", "Nike Training Club", "Nike Run Club", "Nike By You"],
+        "aliases": ["nike sportswear", "jumpman"],
+        "hashtags": ["#nike", "#airjordan", "#justdoit", "#snkrs", "#airmax"],
+        "common_spellings": ["nike air jordan", "nike pegasus", "nike tech fleece", "snkrs drop"],
+        "disambiguation_negatives": [
+            "greek goddess", "goddess nike", "winged victory", "samothrace", "athena nike",
+            "temple of athena", "ancient greek goddess", "mythological nike", "sculpture of nike"
+        ],
+        "business_type": "product"
+    },
+    "Netflix": {
+        "brand_names": ["Netflix", "Netflix Inc"],
+        "products": ["Netflix App", "Netflix Series", "Netflix Originals", "Stranger Things", "Squid Game", "Bridgerton"],
+        "services": ["Netflix Streaming", "Netflix 4K", "Netflix Standard", "Netflix Premium", "Netflix Offline Downloads"],
+        "aliases": ["netflix original"],
+        "hashtags": ["#netflix", "#strangerthings", "#squidgame", "#netflixandchill"],
+        "common_spellings": ["netflix", "netflix app", "netflix show"],
+        "disambiguation_negatives": [
+            "chill on couch", "streaming sunlight"
+        ],
+        "business_type": "service"
+    },
+    "Swiggy": {
+        "brand_names": ["Swiggy", "Bundl Technologies"],
+        "products": ["Swiggy App", "Swiggy Instamart", "Instamart", "Swiggy One", "Swiggy Dineout", "Swiggy Genie", "Swiggy Minis"],
+        "services": ["Food Delivery", "Quick Commerce", "Grocery Delivery", "Dineout Reservations"],
+        "aliases": ["instamart", "swiggy delivery"],
+        "hashtags": ["#swiggy", "#instamart", "#swiggyone", "#swiggydineout"],
+        "common_spellings": ["swiggy instamart", "swiggy delivery", "swiggy food"],
+        "disambiguation_negatives": [
+            "swig of", "a swig", "swigging water", "quick swig", "swig of water", "swig of beer"
+        ],
+        "business_type": "service"
+    },
+    "Zomato": {
+        "brand_names": ["Zomato", "Zomato Ltd", "Eternal"],
+        "products": ["Zomato App", "Zomato Gold", "Blinkit", "Hyperpure", "District by Zomato"],
+        "services": ["Restaurant Delivery", "Food Delivery", "Dining Out", "Quick Commerce"],
+        "aliases": ["blinkit", "zomato delivery"],
+        "hashtags": ["#zomato", "#blinkit", "#zomatogold"],
+        "common_spellings": ["zomato delivery", "zomato gold", "blinkit delivery"],
+        "disambiguation_negatives": [
+            "tomato soup", "red tomatoes", "tomato sauce", "fresh tomatoes"
+        ],
+        "business_type": "service"
+    },
+    "Uber": {
+        "brand_names": ["Uber", "Uber Technologies"],
+        "products": ["Uber Ride", "Uber Eats", "Uber Reserve", "Uber Green", "Uber Black", "Uber XL", "Uber Moto", "Uber Auto", "Uber Shuttle"],
+        "services": ["Ride Hailing", "Food Delivery", "Airport Transit", "Freight Transit"],
+        "aliases": ["uber cab", "uber driver"],
+        "hashtags": ["#uber", "#ubereats", "#uberride"],
+        "common_spellings": ["uber cab", "uber ride", "uber eats", "uber driver"],
+        "disambiguation_negatives": [
+            "uber cool", "uber excited", "uber realistic", "uber competitive", "uber talented",
+            "uber rich", "uber fast", "uber smart", "uber luxury", "uber clean"
+        ],
+        "business_type": "service"
+    },
+    "TCS": {
+        "brand_names": ["TCS", "Tata Consultancy Services"],
+        "products": ["TCS BaNCS", "TCS AI Studio", "TCS ADD", "TCS MasterCraft", "Ignio by Digitate"],
+        "services": ["IT Consulting", "Cloud Transformation", "Cybersecurity Services", "Enterprise Migration"],
+        "aliases": ["tata consultancy", "tcs it"],
+        "hashtags": ["#tcs", "#tataconsultancyservices", "#tcsbancs", "#tcsdigital"],
+        "common_spellings": ["tcs consultancy", "tcs bancs", "tata consultancy"],
+        "disambiguation_negatives": [
+            "tax collected at source", "tcs tax", "carbon substance", "total carbon",
+            "theoretical computer science", "tcs deduction"
+        ],
+        "business_type": "service"
+    }
+}
+
+def clean_text(text: str) -> str:
+    """Standardizes whitespace, normalizes quotes and punctuation."""
+    if not text:
+        return ""
+    cleaned = re.sub(r'[\r\n\t]+', ' ', str(text))
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned

@@ -1,0 +1,147 @@
+version: "3.8"
+
+services:
+  # ==========================================
+  # Database Service: MongoDB
+  # ==========================================
+  mongo:
+    image: mongo:6.0
+    container_name: brandpulse-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: brandpulse_ai
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - brandpulse-net
+
+  # ==========================================
+  # Optional Cache Service: Redis
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: brandpulse-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - brandpulse-net
+
+  # ==========================================
+  # Backend API Service: FastAPI + ML Engine
+  # ==========================================
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: brandpulse-api
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=Advanced Brandpulse AI
+      - VERSION=1.0.0
+      - PORT=8000
+      - SECRET_KEY=${SECRET_KEY:-brandpulse-production-super-secret-jwt-key-2026-secure}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - MONGODB_URI=mongodb://mongo:27017
+      - DATABASE_NAME=brandpulse_ai
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1,http://127.0.0.1:80,http://127.0.0.1:5173}
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-local}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - TRUSTED_PROXIES=127.0.0.1,::1,frontend
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      # Multilingual & AI Engine Configuration
+      - ANALYSIS_BACKEND=${ANALYSIS_BACKEND:-local}
+      - LLM_PROVIDER=${LLM_PROVIDER:-local}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-}
+      # Integrations (Google Places, Meta/Instagram, Facebook)
+      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY:-}
+      - GOOGLE_BUSINESS_MOCK_MODE=${GOOGLE_BUSINESS_MOCK_MODE:-true}
+      - INSTAGRAM_APP_ID=${INSTAGRAM_APP_ID:-}
+      - INSTAGRAM_APP_SECRET=${INSTAGRAM_APP_SECRET:-}
+      - INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN:-}
+      - INSTAGRAM_MOCK_MODE=${INSTAGRAM_MOCK_MODE:-true}
+      - FACEBOOK_PAGE_ID=${FACEBOOK_PAGE_ID:-}
+      - FACEBOOK_ACCESS_TOKEN=${FACEBOOK_ACCESS_TOKEN:-}
+      - FACEBOOK_MOCK_MODE=${FACEBOOK_MOCK_MODE:-true}
+      # Notification Channels (Resend / SMTP & Twilio)
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - NOTIFICATION_FROM_EMAIL=${NOTIFICATION_FROM_EMAIL:-alerts@brandpulse.local}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_WHATSAPP_FROM=${TWILIO_WHATSAPP_FROM:-}
+      - TWILIO_SMS_FROM=${TWILIO_SMS_FROM:-}
+      - NOTIFICATION_MOCK_MODE=${NOTIFICATION_MOCK_MODE:-true}
+    volumes:
+      - backend_storage:/app/storage
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - brandpulse-net
+
+  # ==========================================
+  # Frontend Service: React 18 + Nginx
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api/v1
+    container_name: brandpulse-frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - brandpulse-net
+
+volumes:
+  mongo_data:
+    name: brandpulse_mongo_data
+  backend_storage:
+    name: brandpulse_backend_storage
+
+networks:
+  brandpulse-net:
+    driver: bridge

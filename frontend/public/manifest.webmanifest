@@ -1,0 +1,25 @@
+{
+  "name": "BrandPulse AI — Reputation & Sentiment Intelligence",
+  "short_name": "BrandPulse AI",
+  "description": "Real-time reputation, sentiment intelligence, and crisis alert platform for local businesses.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"]
+}

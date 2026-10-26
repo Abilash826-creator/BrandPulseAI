@@ -1,0 +1,6 @@
+# Git LFS tracking for serialized models and large datasets
+*.joblib filter=lfs diff=lfs merge=lfs -text
+backend/app/datasets/**/*.csv filter=lfs diff=lfs merge=lfs -text
+backend/app/datasets/**/*.json filter=lfs diff=lfs merge=lfs -text
+backend/app/models/**/*.joblib filter=lfs diff=lfs merge=lfs -text
+datasets/**/*.csv filter=lfs diff=lfs merge=lfs -text
