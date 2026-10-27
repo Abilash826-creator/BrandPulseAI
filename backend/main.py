@@ -78,7 +78,7 @@ async def security_headers_middleware(request: Request, call_next):
 # CORS configuration with explicit origins from CORS_ORIGINS env var
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=["https://brand-pulse-ai-tau.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
